@@ -1,0 +1,99 @@
+<includeonly>{{#if:{{{1|}}}|{{DeduplicateCSS|name=CombatIconCSS|1=<templatestyles src="CombatIcon/styles.css"/>}}<!--
+
+    The name is the game's file name without Combat_Icon_ and .png; spaces may stand for underscores, as in file
+    names. The icon has a tooltip and is read out as its title, or else its name, unless only its text names it.
+    The text is joined to the icon by a no-break space, which alone doesn't stop browsers from breaking the line
+    after an inline-block: the stylesheet keeps the icon and the space with the text's first word, and lets the
+    text wrap from there. Without a name, only the text is shown
+
+-->{{#vardefine:combat-icon-id|{{#replace:{{{1}}}| |_}}}}<!--
+-->{{#vardefine:combat-icon-size|{{#if:{{{size|}}}|--combat-icon-size:{{#iferror:{{#expr:{{{size}}}}}|{{{size}}}|{{{size}}}px}}}}}}<!--
+-->{{#vardefine:combat-icon-title|{{#if:{{{title|}}}|{{{title}}}|{{PAGENAME:{{#var:combat-icon-id}}}}}}}}<!--
+-->{{#vardefine:combat-icon-markup|{{#if:{{{title|}}}{{#if:{{{text|}}}||-}}<!--
+-->|{{#tag:span||class=combat-icon mw-no-invert|data-icon={{#var:combat-icon-id}}|role=img|aria-label={{#var:combat-icon-title}}|title={{#var:combat-icon-title}}|style={{#var:combat-icon-size}}}}<!--
+-->|{{#tag:span||class=combat-icon mw-no-invert|data-icon={{#var:combat-icon-id}}|aria-hidden=true|style={{#var:combat-icon-size}}}}<!--
+-->}}{{#if:{{{text|}}}|&nbsp;<span class="combat-icon-text">{{{text}}}</span>}}}}<!--
+-->{{#if:{{{link|}}}|{{#vardefine:combat-icon-markup|[[:{{{link}}}|{{#var:combat-icon-markup}}]]}}}}<!--
+-->{{#if:{{{text|}}}|<span class="combat-icon-label">{{#var:combat-icon-markup}}</span>|{{#var:combat-icon-markup}}}}<!--
+-->|{{{text|}}}}}</includeonly><noinclude>
+Outputs one of the game's combat status icons: buffs, debuffs, crowd control, and special and guide icons. The stylesheet draws their frames, which stay sharp at any size, around symbols from [[:File:Combat_Icon_Atlas.webp]].
+==Usage==
+<code><nowiki>{{CombatIcon|Name[|text=Text][|title=Tooltip][|link=Page][|size=24]}}</nowiki></code>
+==Options==
+*<code>Name</code>: the icon's name, which is its file name in the game without ''Combat_Icon_'' and ''.png'', such as <code>Buff_ATK</code>. Spaces can stand for underscores, as in file names. [[#Icons|The icons]] are listed below; a name that isn't one of them shows an empty frame. Without a name, only the text is shown
+*<code>text</code>: text after the icon, such as the effect's name. A no-break space joins the two, and the icon is never left alone at the end of a line: the line can break inside the text, but not before its first word
+*<code>title</code>: tooltip, which screen readers read too. Without one, the tooltip is the icon's name; an icon with text has none, and screen readers read the text
+*<code>link</code>: page that the icon and its text link to
+*<code>size</code>: height of the icon, in pixels or any CSS length such as <code>2em</code>; the width follows. It is <code>1.5em</code> by default, one and a half times the size of the text. To size all icons in a table or block at once, set <code>--combat-icon-size</code> in its style, such as <code><nowiki>style="--combat-icon-size:32px"</nowiki></code>
+==Examples==
+<syntaxhighlight lang="wikitext" copy>
+{{CombatIcon|Buff_ATK}} {{CombatIcon|Debuff_DEF}} {{CombatIcon|CC_Stunned}} {{CombatIcon|Special_Fury}} {{CombatIcon|Guide_Question}}
+</syntaxhighlight>
+{{CombatIcon|Buff_ATK}} {{CombatIcon|Debuff_DEF}} {{CombatIcon|CC_Stunned}} {{CombatIcon|Special_Fury}} {{CombatIcon|Guide_Question}}
+
+With text:
+<syntaxhighlight lang="wikitext" copy>
+Inflicts {{CombatIcon|CC_Stunned|text=Stun}} for 2 seconds and grants all allies {{CombatIcon|Buff_ATK|text=Attack Increase}}.
+</syntaxhighlight>
+Inflicts {{CombatIcon|CC_Stunned|text=Stun}} for 2 seconds and grants all allies {{CombatIcon|Buff_ATK|text=Attack Increase}}.
+
+In a narrow column the text wraps, and the icon stays with its first word:
+<syntaxhighlight lang="wikitext" copy>
+<div style="width:11em; padding:4px 8px; border:1px solid #a2a9b1">Grants {{CombatIcon|Buff_TacticalShieldHealByHit_Damaged|text=Tactical Shield Recovery When Hit}} and inflicts {{CombatIcon|Debuff_ReduceWeakDamagedRate|text=Effective Damage Taken Increase}}.</div>
+</syntaxhighlight>
+<div style="width:11em; padding:4px 8px; border:1px solid #a2a9b1">Grants {{CombatIcon|Buff_TacticalShieldHealByHit_Damaged|text=Tactical Shield Recovery When Hit}} and inflicts {{CombatIcon|Debuff_ReduceWeakDamagedRate|text=Effective Damage Taken Increase}}.</div>
+
+With a tooltip, and with a link:
+<syntaxhighlight lang="wikitext" copy>
+{{CombatIcon|Debuff_Burn|title=Burn}} {{CombatIcon|CC_Stunned|text=Stun|link=Category:Characters with stun skills}}
+</syntaxhighlight>
+{{CombatIcon|Debuff_Burn|title=Burn}} {{CombatIcon|CC_Stunned|text=Stun|link=Category:Characters with stun skills}}
+
+Sizes, from the game's own 54px down, and at the default size in larger text:
+<syntaxhighlight lang="wikitext" copy>
+{{CombatIcon|Buff_Shield|size=54}} {{CombatIcon|Buff_Shield|size=32}} {{CombatIcon|Buff_Shield|size=24}} {{CombatIcon|Buff_Shield|size=16}} <span style="font-size:150%">{{CombatIcon|Buff_Shield|text=Shield}}</span>
+</syntaxhighlight>
+{{CombatIcon|Buff_Shield|size=54}} {{CombatIcon|Buff_Shield|size=32}} {{CombatIcon|Buff_Shield|size=24}} {{CombatIcon|Buff_Shield|size=16}} <span style="font-size:150%">{{CombatIcon|Buff_Shield|text=Shield}}</span>
+<templatedata>
+{
+	"description": "Outputs a combat status icon, optionally with text that the icon is never parted from at the end of a line.",
+	"params": {
+		"1": {
+			"label": "Name",
+			"description": "The icon's name: its file name in the game without Combat_Icon_ and .png",
+			"example": "Buff_ATK",
+			"type": "string",
+			"required": true
+		},
+		"text": {
+			"label": "Text",
+			"description": "Text after the icon, such as the effect's name",
+			"example": "Attack Increase",
+			"type": "content"
+		},
+		"title": {
+			"label": "Tooltip",
+			"description": "Tooltip, which screen readers read too. Without one, the tooltip is the icon's name, or none when there is text",
+			"type": "string"
+		},
+		"link": {
+			"label": "Link",
+			"description": "Page that the icon and its text link to",
+			"type": "wiki-page-name"
+		},
+		"size": {
+			"label": "Size",
+			"description": "Height of the icon, in pixels or any CSS length",
+			"example": "24",
+			"default": "1.5em",
+			"type": "string"
+		}
+	},
+	"paramOrder": ["1", "text", "title", "link", "size"],
+	"format": "inline"
+}
+</templatedata>
+==Icons==
+The first part of a name is the icon's type, which picks its frame.
+{{CombatIcon/list}}
+</noinclude>

@@ -10,6 +10,14 @@ from .geometry import coverage
 
 PREFIX = 'Combat_Icon_'
 
+# The game's combat icons as extracted from the PC client; refreshed with every game version.
+DEFAULT_SOURCE = (r'C:\blue_archive_data\datamine\blue_archive\ui_textures_pc\Assets\_MX\AddressableAsset'
+                  r'\UIs\02_Tactics\04_BuffIcon')
+
+# Combat_Icon_<Type>_* files in that folder that are not status icons: Suffix_* are the
+# 78x51 EX, stack and timer badges.
+IGNORED_TYPES = {'Suffix'}
+
 # Glyph values of pixels fully inside the fill shape are extended this far (grid distance)
 # over the anti-aliased edge, so the CSS clip-path cuts through flat colour instead of
 # hitting the transparent border of the layer.
@@ -22,12 +30,14 @@ class Icon:
     id: str
     type: str
     effect: str
-    image: np.ndarray                      # (H, W, 4) uint8, as loaded
+    image: np.ndarray | None               # (H, W, 4) uint8, as loaded; None if gone from the source
+    frame: str = None                      # frame it is drawn with: its type's, unless a frame lists it
     shift: tuple = (0, 0)                  # (dx, dy) applied to line the icon up with its frame
     glyph: np.ndarray = None               # extracted glyph layer, same size as image
-    stats: dict = field(default_factory=dict)
+    warnings: list = field(default_factory=list)
     col: int = 0                           # atlas cell
     row: int = 0
+    missing: bool = False                  # gone from the source; glyph kept from the previous atlas
 
 
 def parse_name(filename):
@@ -43,16 +53,16 @@ def parse_name(filename):
 
 
 def load_icons(directory):
-    icons, skipped = [], []
+    """The Combat_Icon_<Type>_<Name>.png files in a directory, by name; other files are ignored."""
+    icons = []
     for name in sorted(os.listdir(directory), key=str.lower):
         parsed = parse_name(name)
-        if parsed is None:
-            skipped.append(name)
+        if parsed is None or parsed[1] in IGNORED_TYPES:
             continue
         with Image.open(os.path.join(directory, name)) as im:
             image = np.array(im.convert('RGBA'))
         icons.append(Icon(file=name, id=parsed[0], type=parsed[1], effect=parsed[2], image=image))
-    return icons, skipped
+    return icons
 
 
 def shift_image(image, dx, dy):

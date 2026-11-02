@@ -2,8 +2,8 @@
  "class": "combat-icon",
  "atlas": {
   "file": "Combat_Icon_Atlas.webp",
-  "url": "https://static.wikitide.net/bluearchivewiki/a/a0/Combat_Icon_Atlas.webp?v=090422ada3",
-  "version": "090422ada3",
+  "url": "https://static.wikitide.net/bluearchivewiki/a/a0/Combat_Icon_Atlas.webp?v=771028e9e5",
+  "version": "771028e9e5",
   "width": 786,
   "height": 842,
   "cell": [
@@ -29,11 +29,15 @@
   },
   "Special": {
    "fill": "#ffc832",
-   "count": 107
+   "count": 109
   },
   "Guide": {
    "fill": "#70767c",
    "count": 2
+  },
+  "Heal": {
+   "fill": "#62d734",
+   "count": 1
   }
  },
  "icons": [
@@ -3548,6 +3552,53 @@
     0
    ],
    "warnings": []
+  },
+  {
+   "id": "Special_CH0379_ExtraPassive",
+   "file": "Combat_Icon_Special_CH0379_ExtraPassive.png",
+   "type": "Special",
+   "effect": "CH0379_ExtraPassive",
+   "col": 10,
+   "row": 14,
+   "x": 492,
+   "y": 786,
+   "shift": [
+    0,
+    0
+   ],
+   "warnings": []
+  },
+  {
+   "id": "Special_EN0023",
+   "file": "Combat_Icon_Special_EN0023.png",
+   "type": "Special",
+   "effect": "EN0023",
+   "col": 11,
+   "row": 14,
+   "x": 541,
+   "y": 786,
+   "shift": [
+    0,
+    0
+   ],
+   "warnings": []
+  },
+  {
+   "id": "Buff_Heal",
+   "file": "Combat_Icon_Buff_Heal.png",
+   "type": "Buff",
+   "effect": "Heal",
+   "col": 12,
+   "row": 14,
+   "x": 590,
+   "y": 786,
+   "shift": [
+    0,
+    0
+   ],
+   "warnings": [],
+   "frame": "Heal"
   }
- ]
+ ],
+ "reserved": []
 }

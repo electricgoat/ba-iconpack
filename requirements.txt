@@ -1,3 +1,5 @@
 Pillow>=10.0
 numpy>=1.26
 scipy>=1.11
+pywikiapi>=4.3
+requests>=2.31

@@ -40,6 +40,7 @@ class Frame:
     vertices: list
     radii: list
     skew_origin_y: float = 47.0
+    icons: tuple = ()  # ids of the icons this frame is for; if empty, every icon of the type it is named after
 
     def outline(self, grow=0.0):
         verts = [tuple(v) for v in self.vertices]
@@ -91,8 +92,17 @@ class FrameSet:
             frames[name] = Frame(name=name, shape=t['shape'], fill=_rgb(t['fill']), rim=_rgb(t['rim']),
                                  rim_alpha=t['rim_alpha'], rim_width=t['rim_width'], skew=t['skew'],
                                  vertices=[tuple(v) for v in t['vertices']], radii=list(t['radii']),
-                                 skew_origin_y=origin)
+                                 skew_origin_y=origin, icons=tuple(t.get('icons', ())))
         return cls(canvas=tuple(data['canvas']), shadow=Shadow(**data['shadow']), frames=frames)
+
+    def frame_for(self, icon_id):
+        """Name of the frame an icon is drawn with: the one listing it, else the one named after its
+        type (the id prefix) unless that frame only lists icons; None if there is none."""
+        for name, f in self.frames.items():
+            if icon_id in f.icons:
+                return name
+        f = self.frames.get(icon_id.partition('_')[0])
+        return f.name if f is not None and not f.icons else None
 
     def save(self, path, extra=None):
         origin = next(iter(self.frames.values())).skew_origin_y if self.frames else 47.0
@@ -101,7 +111,7 @@ class FrameSet:
             'skew_origin_y': origin,
             'shadow': {k: round(v, 4) for k, v in vars(self.shadow).items()},
             'types': {
-                name: {
+                name: ({'icons': list(f.icons)} if f.icons else {}) | {
                     'shape': f.shape,
                     'fill': _hex(f.fill),
                     'rim': _hex(f.rim),
@@ -120,6 +130,9 @@ class FrameSet:
         text = re.sub(r'\[\s+([-\d.,\s]+?)\s+\]', lambda m: '[' + re.sub(r'\s+', ' ', m.group(1)) + ']', text)
         text = re.sub(r'\[\s+(\[[-\d., ]+\](?:,\s+\[[-\d., ]+\])*)\s+\]',
                       lambda m: '[' + re.sub(r',\s+\[', ', [', m.group(1)) + ']', text)
+        # and lists of icon ids
+        text = re.sub(r'\[\s+("[^"]*"(?:,\s+"[^"]*")*)\s+\]',
+                      lambda m: '[' + re.sub(r',\s+"', ', "', m.group(1)) + ']', text)
         with open(path, 'w', encoding='utf-8') as fh:
             fh.write(text + '\n')
 

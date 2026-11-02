@@ -25,6 +25,9 @@ HEADER = """\
  * Size: set --combat-icon-size (icon height, default {size}) on the icon or any ancestor.
  * Frames are drawn with clip-path polygons, so they stay sharp at any size or pixel density;
  * only the glyphs come from the raster atlas. --ci-* properties are internal.
+ *
+ * An icon with text, as Template:CombatIcon writes it:
+ *   <span class="{cls}-label"><span class="{cls}" ...></span>&nbsp;<span class="{cls}-text">Text</span></span>
  */
 """
 
@@ -71,11 +74,11 @@ def frame_rule(selector, frameset, frame):
 
 
 def build_css(frameset, placements, layout, atlas_url, fallback_type='Guide'):
-    """placements: list of (icon_id, col, row); layout: dict with gutter, width, height of the atlas."""
+    """placements: list of (icon_id, col, row); layout: dict with the gutter and width of the atlas."""
     if fallback_type not in frameset.frames:
         raise ValueError(f'fallback frame type {fallback_type!r} is not defined')
     cw, ch = frameset.canvas
-    g, aw, ah = layout['gutter'], layout['width'], layout['height']
+    g, aw = layout['gutter'], layout['width']
     size = f'var(--combat-icon-size, {DEFAULT_SIZE})'
     blocks = [
         HEADER.format(cls=CLASS, size=DEFAULT_SIZE),
@@ -92,24 +95,35 @@ def build_css(frameset, placements, layout, atlas_url, fallback_type='Guide'):
         ]),
         rule(f'.{CLASS}::before,\n.{CLASS}::after', ['content: ""', 'position: absolute', 'inset: 0']),
         rule(f'.{CLASS}::before', ['background-color: var(--ci-rim)', 'clip-path: var(--ci-rim-shape)']),
-        # A percentage position p shows the cell whose left edge is at x0 when p = x0 / (atlas - cell).
+        # The atlas is scaled and positioned in units of the icon size (size / cell height = one
+        # atlas pixel), with its height left to follow its aspect ratio. Nothing here depends on
+        # the atlas height, so an older stylesheet still finds its glyphs once the atlas grows.
         # Cells start at gutter + index * (cell + gutter); a missing index (-2) lands off-view.
         rule(f'.{CLASS}::after', [
             'background-color: var(--ci-fill)',
             f'background-image: url("{atlas_url}")',
-            f'background-size: calc(100% * {aw} / {cw}) calc(100% * {ah} / {ch})',
-            f'background-position: calc(100% * ({g} + {cw + g} * var(--ci-col, -2)) / {aw - cw}) '
-            f'calc(100% * ({g} + {ch + g} * var(--ci-row, -2)) / {ah - ch})',
+            f'background-size: calc({size} * {aw} / {ch}) auto',
+            f'background-position: calc({size} * ({g} + {cw + g} * var(--ci-col, -2)) / -{ch}) '
+            f'calc({size} * ({g} + {ch + g} * var(--ci-row, -2)) / -{ch})',
             'background-repeat: no-repeat',
             'clip-path: var(--ci-fill-shape)',
         ]),
+        # A line may break next to an inline-block even at a no-break space, so labels don't wrap,
+        # only their text does: the icon always stays on the line of the text's first word.
+        rule(f'.{CLASS}-label', ['white-space: nowrap']),
+        rule(f'.{CLASS}-label .{CLASS}-text', ['white-space: normal']),
     ]
+    overrides = []
     for name, frame in frameset.frames.items():
-        if name == fallback_type:
+        if frame.icons:  # after the type frames, which these override at the same specificity
+            overrides.append(f'/* {name} frame, for {", ".join(frame.icons)} */\n' + frame_rule(
+                ',\n'.join(f'.{CLASS}[data-icon="{icon_id}"]' for icon_id in frame.icons), frameset, frame))
+        elif name == fallback_type:
             blocks.append(f'/* {name} frame, also used when the type is not recognised */\n'
                           + frame_rule(f'.{CLASS}', frameset, frame))
         else:
             blocks.append(f'/* {name} frame */\n' + frame_rule(f'.{CLASS}[data-icon^="{name}_"]', frameset, frame))
+    blocks += overrides
     blocks.append('/* Glyph positions in the atlas */\n' + ''.join(
         f'.{CLASS}[data-icon="{icon_id}"] {{ --ci-col: {col}; --ci-row: {row}; }}\n'
         for icon_id, col, row in placements))

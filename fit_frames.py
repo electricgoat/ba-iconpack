@@ -4,21 +4,25 @@ Only needed when frame artwork changes or a new icon type appears; generate_atla
 just reads frames.json.
 
 How it works: icons of one type share an identical frame, so the per-pixel mode across
-all (aligned) icons of a type is a clean picture of the frame. A parametric model is
-fitted to that picture by least squares:
+all (aligned) icons of a type is a clean picture of the frame. (A frame can also be for
+a few listed icons that look different from the rest of their type, such as the green
+Buff_Heal.) A parametric model is fitted to that picture by least squares:
 
   upright convex polygon with rounded corners -> skewX -> fill
   same polygon grown by rim_width             -> skewX -> translucent rim underneath
   blurred, offset silhouette                  -> drop shadow (fit only)
 
 The blurred shadow cannot be reproduced reliably in CSS, so a second step fits the
-filter-free shadow that the CSS actually draws (shared by all types).
+filter-free shadow that the CSS actually draws (shared by all frames). Adding a frame
+keeps that shadow as it is, so the existing frames don't change.
 
-    python fit_frames.py                      # refit every type in frames.json
-    python fit_frames.py --types Buff CC      # refit some types
-    python fit_frames.py --add Foo --shape rect   # add a new frame type
+    python fit_frames.py                      # refit every frame in frames.json
+    python fit_frames.py --types Buff CC      # refit some frames
+    python fit_frames.py --add Foo --shape rect   # add a frame for a new type, Foo_*
+    python fit_frames.py --add Heal --shape rect --for Buff_Heal  # add a frame for some icons
 """
 import argparse
+import dataclasses
 import math
 import os
 import sys
@@ -28,7 +32,7 @@ from scipy import ndimage, optimize
 
 from iconpack.frames import Frame, FrameSet, Shadow
 from iconpack.geometry import coverage, offset_polygon, rounded_polygon
-from iconpack.icons import load_icons, shift_image
+from iconpack.icons import DEFAULT_SOURCE, load_icons, shift_image
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 SS = 4  # supersampling used for the blurred shadow during fitting
@@ -232,51 +236,66 @@ def frame_canvas(template):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--icons', default=os.path.join(HERE, 'icons'))
+    ap.add_argument('--icons', default=DEFAULT_SOURCE, help='source icon directory (default: the game data extract)')
     ap.add_argument('--frames', default=os.path.join(HERE, 'frames.json'))
-    ap.add_argument('--types', nargs='*', help='types to refit (default: all)')
-    ap.add_argument('--add', metavar='TYPE', help='add a new frame type')
-    ap.add_argument('--shape', choices=sorted(SHAPES), help='shape of the new type (with --add)')
-    ap.add_argument('--fill', help='fill colour of the new type as #rrggbb (default: most common colour)')
+    ap.add_argument('--types', nargs='*', help='frames to refit (default: all)')
+    ap.add_argument('--add', metavar='NAME', help='add a frame, for the type of that name unless --for is given')
+    ap.add_argument('--for', dest='ids', nargs='+', metavar='ICON',
+                    help="with --add: the icons (e.g. Buff_Heal) the new frame is for, instead of their type's")
+    ap.add_argument('--shape', choices=sorted(SHAPES), help='shape of the new frame (with --add)')
+    ap.add_argument('--fill', help='fill colour of the new frame as #rrggbb (default: most common colour)')
     args = ap.parse_args()
+    if not os.path.isdir(args.icons):
+        sys.exit(f'icon directory {args.icons} not found; pass --icons')
 
     frameset = FrameSet.load(args.frames)
-    icons, _ = load_icons(args.icons)
-    by_type = {}
-    for icon in icons:
-        by_type.setdefault(icon.type, []).append(icon.image)
-
     todo = list(args.types or frameset.frames)
+    if set(todo) - set(frameset.frames):
+        sys.exit(f'no such frame in {args.frames}: {", ".join(sorted(set(todo) - set(frameset.frames)))}')
+    if args.ids and not args.add:
+        sys.exit('--for needs --add')
     if args.add:
         if not args.shape:
             sys.exit('--add needs --shape')
+        if args.add in frameset.frames:
+            sys.exit(f'there already is a {args.add} frame; refit it with --types {args.add}')
+        # start from a frame of the same shape; adding it now also groups its icons with it
+        ref = next(f for f in frameset.frames.values() if f.shape == args.shape)
+        frameset.frames[args.add] = dataclasses.replace(ref, name=args.add, icons=tuple(args.ids or ()))
         todo = [args.add]
+
+    w, h = frameset.canvas
+    by_frame = {}
+    for icon in load_icons(args.icons):
+        if icon.image.shape[:2] == (h, w):
+            by_frame.setdefault(frameset.frame_for(icon.id), []).append(icon.image)
+    refit_shadow = not args.add  # the shared shadow is fitted to every frame
     templates = {}
-    for name in set(todo) | set(frameset.frames):
-        if name not in by_type:
-            sys.exit(f'no icons of type {name!r} in {args.icons}')
-        templates[name] = build_template(by_type[name])
+    for name in (frameset.frames if refit_shadow else todo):
+        if name not in by_frame:
+            sys.exit(f'no icons for the {name} frame in {args.icons}')
+        templates[name] = build_template(by_frame[name])
 
     print('fitting frames:')
     for name in todo:
         tmpl, freq = templates[name]
-        if name in frameset.frames:
-            ref, fill, new = frameset.frames[name], frameset.frames[name].fill, None
+        ref = frameset.frames[name]
+        new = tmpl if name == args.add else None
+        if new is None:
+            fill = ref.fill
+        elif args.fill:
+            fill = tuple(int(args.fill.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4))
         else:
-            ref = next(f for f in frameset.frames.values() if f.shape == args.shape)
-            if args.fill:
-                fill = tuple(int(args.fill.lstrip('#')[i:i + 2], 16) for i in (0, 2, 4))
-            else:
-                opaque = tmpl[freq >= 0.9]
-                opaque = opaque[opaque[:, 3] > 0.999][:, :3]
-                vals, counts = np.unique(np.round(opaque * 255).astype(int), axis=0, return_counts=True)
-                fill = tuple(int(v) for v in vals[counts.argmax()])
-            new = tmpl
+            opaque = tmpl[freq >= 0.9]
+            opaque = opaque[opaque[:, 3] > 0.999][:, :3]
+            vals, counts = np.unique(np.round(opaque * 255).astype(int), axis=0, return_counts=True)
+            fill = tuple(int(v) for v in vals[counts.argmax()])
         init = initial_params(ref, fill, new)
-        frame, _ = fit_frame(name, ref.shape if new is None else args.shape, fill, tmpl, freq, init,
-                             frameset.canvas)
+        frame, _ = fit_frame(name, ref.shape, fill, tmpl, freq, init, frameset.canvas)
+        frame.icons = ref.icons
         frameset.frames[name] = frame
-    fit_shadow(frameset, templates)
+    if refit_shadow:
+        fit_shadow(frameset, templates)
     frameset.save(args.frames)
     print(f'wrote {os.path.relpath(args.frames)}')
 

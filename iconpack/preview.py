@@ -29,7 +29,8 @@ label {{ user-select: none; }}
 .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; }}
 .cell {{ background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 8px; text-align: center; }}
 .pair {{ display: flex; justify-content: center; gap: 6px; }}
-.pair img {{ width: 47px; height: 54px; }}
+.pair img, .pair .gone {{ width: 47px; height: 54px; }}
+.pair .gone {{ border: 1px dashed var(--line); border-radius: 4px; }}
 .pair .{cls} {{ --combat-icon-size: 54px; }}
 .name {{ font: 11px/1.3 ui-monospace, monospace; overflow-wrap: anywhere; margin-top: 4px; }}
 .flag {{ display: inline-block; margin-top: 2px; font-size: 11px; color: #b32424; }}
@@ -80,7 +81,7 @@ def icon_markup(icon_id, title=None, style=None):
 
 
 def build_preview(icons, types, css_href, atlas_href, icons_href, atlas_size, version):
-    """icons: list of dicts with id, file, type and optional warnings (list of str)."""
+    """icons: list of dicts with id, file, type and optional warnings (list of str) and missing (bool)."""
     by_type = {t: [i for i in icons if i['type'] == t] for t in types}
     groups = []
     for t, items in by_type.items():
@@ -88,9 +89,11 @@ def build_preview(icons, types, css_href, atlas_href, icons_href, atlas_size, ve
             continue
         cells = []
         for i in items:
-            flags = ''.join(f'<span class="flag">{html.escape(w)}</span><br>' for w in i.get('warnings', []))
-            cells.append(f'<div class="cell"><div class="pair">{icon_markup(i["id"])}'
-                         f'<img src="{html.escape(icons_href + "/" + i["file"])}" alt="" loading="lazy"></div>'
+            warnings = (['gone from the source'] if i.get('missing') else []) + i.get('warnings', [])
+            flags = ''.join(f'<span class="flag">{html.escape(w)}</span><br>' for w in warnings)
+            source = ('<span class="gone"></span>' if i.get('missing') else
+                      f'<img src="{html.escape(icons_href + "/" + i["file"])}" alt="" loading="lazy">')
+            cells.append(f'<div class="cell"><div class="pair">{icon_markup(i["id"])}{source}</div>'
                          f'<div class="name">{html.escape(i["id"])}</div>{flags}</div>')
         groups.append(f'<h3>{html.escape(t)} <span class="muted">({len(items)})</span></h3>\n'
                       f'<div class="grid">\n' + '\n'.join(cells) + '\n</div>')
