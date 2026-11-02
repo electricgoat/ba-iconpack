@@ -21,10 +21,10 @@ Outputs one of the game's combat status icons: buffs, debuffs, crowd control, an
 <code><nowiki>{{CombatIcon|Name[|text=Text][|title=Tooltip][|link=Page][|size=24]}}</nowiki></code>
 ==Options==
 *<code>Name</code>: the icon's name, which is its file name in the game without ''Combat_Icon_'' and ''.png'', such as <code>Buff_ATK</code>. Spaces can stand for underscores, as in file names. [[#Icons|The icons]] are listed below; a name that isn't one of them shows an empty frame. Without a name, only the text is shown
-*<code>text</code>: text after the icon, such as the effect's name. A no-break space joins the two, and the icon is never left alone at the end of a line: the line can break inside the text, but not before its first word
+*<code>text</code>: text after the icon, such as the effect's name
 *<code>title</code>: tooltip, which screen readers read too. Without one, the tooltip is the icon's name; an icon with text has none, and screen readers read the text
 *<code>link</code>: page that the icon and its text link to
-*<code>size</code>: height of the icon, in pixels or any CSS length such as <code>2em</code>; the width follows. It is <code>1.5em</code> by default, one and a half times the size of the text. To size all icons in a table or block at once, set <code>--combat-icon-size</code> in its style, such as <code><nowiki>style="--combat-icon-size:32px"</nowiki></code>
+*<code>size</code>: height of the icon, in pixels or any CSS length such as <code>2em</code>; the width is automatic. To size all icons in a table or block at once, set <code>--combat-icon-size</code> in its style, such as <code><nowiki>style="--combat-icon-size:32px"</nowiki></code>
 ==Examples==
 <syntaxhighlight lang="wikitext" copy>
 {{CombatIcon|Buff_ATK}} {{CombatIcon|Debuff_DEF}} {{CombatIcon|CC_Stunned}} {{CombatIcon|Special_Fury}} {{CombatIcon|Guide_Question}}

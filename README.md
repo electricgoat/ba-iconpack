@@ -82,7 +82,13 @@ The template writes this markup, which other templates or modules can also write
   e.g. `style="--combat-icon-size:24px"`. The width follows the source 47:54 aspect ratio, and the
   box is the same as the source PNG's, so a CSS icon can replace `[[File:Combat_Icon_…png|x24px]]` 1:1.
 - Inline, each icon is centred on the text by its frame rather than its box. CC and Special frames
-  sit low and short in the shared canvas, so they are raised to line up with Buff and Debuff.
+  sit low and short in the shared canvas, so they are raised to line up with Buff and Debuff. The
+  frames are centred on capitals and digits, half their height above the baseline (0.69ex, which is
+  within 0.2px of that in common sans-serif fonts). Centred on the x-height, as `vertical-align: middle`
+  does, they looked 1.4px low in Vector's 14px text and 1.6px low in Citizen's and Minerva's 16px.
+- Negative top and bottom margins make the line leave room only for the frame and its shadow, not
+  the empty canvas around them. At the default size, a line with icons is exactly as tall as one
+  without in all four skins (before, up to 1.1px taller).
 - `mw-no-invert` is only needed for the DarkMode extension, which dark-modes the default skin
   (Vector legacy) by inverting the whole page. That class makes it re-invert the icon, as it does
   for images. Citizen, Vector 2022 and Minerva have native dark themes and ignore it.

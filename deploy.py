@@ -134,7 +134,7 @@ def deploy(args):
     changes = icon_changes(old_ids, set(cells(new_css).values()))
     summaries = {
         STYLES: f"Stylesheet of atlas {atlas['version']}{changes}",
-        TEMPLATE: 'Template from ba-iconpack (wiki/CombatIcon.wikitext)',
+        TEMPLATE: 'Updated ba-iconpack template',
         LIST: f"Icons of atlas {atlas['version']}{changes}",
     }
 

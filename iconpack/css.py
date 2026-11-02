@@ -60,13 +60,18 @@ def rule(selector, declarations):
 
 def frame_rule(selector, frameset, frame):
     canvas = frameset.canvas
+    hull = frameset.hull_outline(frame)
+    top, bottom = min(y for _, y in hull), max(y for _, y in hull)
     return rule(selector, [
         '--ci-fill: #%02x%02x%02x' % tuple(frame.fill),
         f'--ci-rim: {_rgba(frame.rim, frame.rim_alpha)}',
         f'--ci-shadow-top: {_pct(frameset.shadow_top(frame) / canvas[1] * 100)}',
-        # height of the frame's visual centre above the bottom of the box, as a fraction of the box;
-        # frames sit at different heights in the shared canvas (CC/Special are low and short)
-        f'--ci-lift: {(canvas[1] - frame.center_y) / canvas[1]:.4f}',
+        # empty canvas above and below the frame and its shadow, and the height of the frame's
+        # visual centre above the shadow's bottom, as fractions of the box; frames sit at different
+        # heights in the shared canvas (CC/Special are low and short)
+        f'--ci-top: {top / canvas[1]:.4f}',
+        f'--ci-bottom: {(canvas[1] - bottom) / canvas[1]:.4f}',
+        f'--ci-lift: {(bottom - frame.center_y) / canvas[1]:.4f}',
         f'--ci-fill-shape: {polygon(frame.fill_outline, canvas)}',
         f'--ci-rim-shape: {polygon(frame.rim_outline, canvas)}',
         f'--ci-hull: {polygon(frameset.hull_outline(frame), canvas)}',
@@ -87,8 +92,15 @@ def build_css(frameset, placements, layout, atlas_url, fallback_type='Guide'):
             'position: relative',
             f'width: calc({size} * {cw} / {ch})',
             f'height: {size}',
-            # like `middle`, but centres the frame rather than the box on the text's x-height
-            f'vertical-align: calc(0.5ex - {size} * var(--ci-lift))',
+            # the line makes room for the frame and its shadow, not the empty canvas around them,
+            # so icons don't push lines apart; the bottom margin edge is the shadow's bottom
+            f'margin-top: calc({size} * var(--ci-top) * -1)',
+            f'margin-bottom: calc({size} * var(--ci-bottom) * -1)',
+            # centres the frame (not the box) on capitals and digits, half their height above the
+            # baseline: 0.69ex, as they are 1.38ex tall in Arial and 1.33-1.40ex in other sans-serif
+            # fonts. Centred on the x-height, as `middle` does, icons look a pixel or two low. (The cap
+            # unit would be exact, but a browser without it drops the whole calc() with var() in it.)
+            f'vertical-align: calc(0.69ex - {size} * var(--ci-lift))',
             'clip-path: var(--ci-hull)',
             'background-image: linear-gradient(transparent var(--ci-shadow-top), '
             f'rgb(0 0 0 / {frameset.shadow.alpha * 100:.0f}%) var(--ci-shadow-top))',
