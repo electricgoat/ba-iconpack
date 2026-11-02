@@ -88,7 +88,9 @@ The template writes this markup, which other templates or modules can also write
   does, they looked 1.4px low in Vector's 14px text and 1.6px low in Citizen's and Minerva's 16px.
 - Negative top and bottom margins make the line leave room only for the frame and its shadow, not
   the empty canvas around them. At the default size, a line with icons is exactly as tall as one
-  without in all four skins (before, up to 1.1px taller).
+  without in all four skins (before, up to 1.1px taller). The margins apply outside text as well:
+  directly in a flex or grid container, an icon is placed by its frame, not by its 47×54 canvas.
+  Add `margin: 0` where an icon has to line up box for box with a PNG, as `preview.html` does.
 - `mw-no-invert` is only needed for the DarkMode extension, which dark-modes the default skin
   (Vector legacy) by inverting the whole page. That class makes it re-invert the icon, as it does
   for images. Citizen, Vector 2022 and Minerva have native dark themes and ignore it.

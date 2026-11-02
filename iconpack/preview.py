@@ -31,7 +31,8 @@ label {{ user-select: none; }}
 .pair {{ display: flex; justify-content: center; gap: 6px; }}
 .pair img, .pair .gone {{ width: 47px; height: 54px; }}
 .pair .gone {{ border: 1px dashed var(--line); border-radius: 4px; }}
-.pair .{cls} {{ --combat-icon-size: 54px; }}
+/* compared box for box with the PNG, so without the margins that leave out the empty canvas */
+.pair .{cls} {{ --combat-icon-size: 54px; margin: 0; }}
 .name {{ font: 11px/1.3 ui-monospace, monospace; overflow-wrap: anywhere; margin-top: 4px; }}
 .flag {{ display: inline-block; margin-top: 2px; font-size: 11px; color: #b32424; }}
 :root.dark .flag {{ color: #fd7865; }}
